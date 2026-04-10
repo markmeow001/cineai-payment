@@ -107,7 +107,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
         <button class="primary full" onclick="doLogin()" style="margin-top:14px">登入</button>
       </div>
     </div>
-  
+    
   </div>
 </div>
 
@@ -204,6 +204,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
     <button class="tab active" onclick="adminTab('pending',this)">待審</button>
     <button class="tab" onclick="adminTab('approved',this)">已核准</button>
     <button class="tab" onclick="adminTab('settled',this)">已結算</button>
+    <button class="tab" onclick="adminTab('export',this)">匯出報表</button>
     <button class="tab" onclick="adminTab('dramas',this)">劇集管理</button>
     <button class="tab" onclick="adminTab('staff',this)">員工管理</button>
   </div>
@@ -216,6 +217,29 @@ button:disabled{opacity:0.5;cursor:not-allowed}
     <div id="approved-list"></div>
   </div>
   <div id="at-settled" style="display:none"><div id="settled-list"></div></div>
+  <div id="at-export" style="display:none">
+    <div class="card">
+      <p class="sec-title">選擇輸出日期範圍</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem">
+        <div><label class="lbl" style="margin-top:0">開始日期</label><input type="date" id="export-start"/></div>
+        <div><label class="lbl" style="margin-top:0">結束日期</label><input type="date" id="export-end"/></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="icon-btn" onclick="setExportRange('thisMonth')">本月</button>
+        <button class="icon-btn" onclick="setExportRange('lastMonth')">上個月</button>
+        <button class="icon-btn" onclick="setExportRange('allSettled')">全部已結算</button>
+      </div>
+    </div>
+    <div class="card" id="export-preview-card" style="display:none">
+      <p class="sec-title">預覽</p>
+      <div id="export-preview-summary"></div>
+    </div>
+    <div id="export-msg" class="alert" style="display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="primary full" onclick="previewExport()">預覽報表</button>
+      <button id="export-pdf-btn" style="display:none;flex:1" onclick="exportPDF()">列印 / 匯出 PDF</button>
+    </div>
+  </div>
   <div id="at-dramas" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
       <p style="font-size:13px;color:#666">設定劇集為進行中或已完結</p>
@@ -545,7 +569,7 @@ function renderAdminStats(){
 }
 function adminTab(tab,el){
   document.querySelectorAll('#s-admin .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
-  ['pending','approved','settled','dramas','staff'].forEach(t=>document.getElementById('at-'+t).style.display=t===tab?'block':'none');
+  ['pending','approved','settled','export','dramas','staff'].forEach(t=>document.getElementById('at-'+t).style.display=t===tab?'block':'none');
   if(tab==='staff')renderStaffList();
   if(tab==='dramas')renderDramaMgmt();
 }
@@ -748,6 +772,168 @@ async function askDeleteStaff(uid,name){
   await post({action:'deleteUser',uid});
   allUsers=allUsers.filter(u=>u.uid!==uid);
   buildLoginSelect();renderStaffList();
+}
+
+function setExportRange(preset){
+  const now=new Date();
+  let s,e;
+  if(preset==='thisMonth'){
+    s=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+    const last=new Date(now.getFullYear(),now.getMonth()+1,0);
+    e=last.toISOString().slice(0,10);
+  } else if(preset==='lastMonth'){
+    const first=new Date(now.getFullYear(),now.getMonth()-1,1);
+    const last=new Date(now.getFullYear(),now.getMonth(),0);
+    s=first.toISOString().slice(0,10);e=last.toISOString().slice(0,10);
+  } else if(preset==='allSettled'){
+    const settled=allLogs.filter(l=>l.status==='settled');
+    if(!settled.length){s=now.toISOString().slice(0,10);e=s;}
+    else{
+      const dates=settled.map(l=>String(l.dateStart).slice(0,10)).sort();
+      s=dates[0];e=dates[dates.length-1];
+    }
+  }
+  document.getElementById('export-start').value=s;
+  document.getElementById('export-end').value=e;
+  document.getElementById('export-preview-card').style.display='none';
+  document.getElementById('export-pdf-btn').style.display='none';
+}
+
+function previewExport(){
+  const s=document.getElementById('export-start').value;
+  const e=document.getElementById('export-end').value;
+  const msg=document.getElementById('export-msg');
+  if(!s||!e||s>e){msg.className='alert alert-error';msg.textContent='請選擇正確的日期範圍';msg.style.display='block';return}
+  msg.style.display='none';
+  const logs=allLogs.filter(l=>{
+    const ds=String(l.dateStart).slice(0,10);
+    return ds>=s&&ds<=e&&l.status==='settled';
+  });
+  if(!logs.length){msg.className='alert alert-error';msg.textContent='此日期範圍內無已結算紀錄';msg.style.display='block';return}
+  const byUser={};
+  logs.forEach(l=>{
+    if(!byUser[l.user])byUser[l.user]={name:l.name,eps:0,pay:0,items:[]};
+    byUser[l.user].eps+=Number(l.episodes);
+    byUser[l.user].pay+=Number(l.episodes)*Number(l.rate);
+    byUser[l.user].items.push(l);
+  });
+  const total=logs.reduce((s,l)=>s+Number(l.episodes),0);
+  const totalPay=logs.reduce((s,l)=>s+Number(l.episodes)*Number(l.rate),0);
+  const summaryHTML=`
+    <div style="margin-bottom:12px">
+      <p style="font-size:12px;color:#666">期間：${fmtDate(s)} – ${fmtDate(e)}</p>
+      <p style="font-size:12px;color:#666">共 ${Object.keys(byUser).length} 位員工 · ${total} 集 · CAD $${totalPay.toLocaleString()}</p>
+    </div>
+    ${Object.values(byUser).map(u=>`
+      <div class="row">
+        <div style="flex:1">
+          <p style="font-size:13px;font-weight:500">${u.name}</p>
+          <p style="font-size:12px;color:#666">${u.eps} 集 · ${u.items.length} 筆</p>
+        </div>
+        <p style="font-size:14px;font-weight:500">CAD $${u.pay.toLocaleString()}</p>
+      </div>`).join('')}
+    <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.1);margin-top:4px">
+      <span style="font-size:13px;font-weight:500">合計</span>
+      <span style="font-size:14px;font-weight:500">CAD $${totalPay.toLocaleString()}</span>
+    </div>`;
+  document.getElementById('export-preview-summary').innerHTML=summaryHTML;
+  document.getElementById('export-preview-card').style.display='block';
+  document.getElementById('export-pdf-btn').style.display='block';
+}
+
+function exportPDF(){
+  const s=document.getElementById('export-start').value;
+  const e=document.getElementById('export-end').value;
+  const logs=allLogs.filter(l=>{
+    const ds=String(l.dateStart).slice(0,10);
+    return ds>=s&&ds<=e&&l.status==='settled';
+  });
+  const byUser={};
+  logs.forEach(l=>{
+    if(!byUser[l.user])byUser[l.user]={name:l.name,eps:0,pay:0,items:[]};
+    byUser[l.user].eps+=Number(l.episodes);
+    byUser[l.user].pay+=Number(l.episodes)*Number(l.rate);
+    byUser[l.user].items.push(l);
+  });
+  const total=logs.reduce((s,l)=>s+Number(l.episodes),0);
+  const totalPay=logs.reduce((s,l)=>s+Number(l.episodes)*Number(l.rate),0);
+  const now=new Date();
+  const printDate=now.getFullYear()+'/'+(now.getMonth()+1)+'/'+now.getDate();
+
+  const summaryRows=Object.values(byUser).map((u,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${u.name}</td>
+      <td style="text-align:center">${u.items.length}</td>
+      <td style="text-align:center">${u.eps}</td>
+      <td style="text-align:right">CAD $${u.pay.toLocaleString()}</td>
+    </tr>`).join('');
+
+  const detailSections=Object.values(byUser).map(u=>`
+    <div class="detail-section">
+      <div class="detail-header">${u.name} <span style="font-weight:400;font-size:13px;color:#666">— ${u.eps} 集 · CAD $${u.pay.toLocaleString()}</span></div>
+      <table>
+        <thead><tr><th>劇集名稱</th><th>製作日期</th><th style="text-align:center">集數</th><th style="text-align:right">金額</th></tr></thead>
+        <tbody>
+          ${u.items.map(l=>`
+            <tr>
+              <td>${l.drama}</td>
+              <td>${fmtRange(l.dateStart,l.dateEnd)}</td>
+              <td style="text-align:center">${l.episodes}</td>
+              <td style="text-align:right">CAD $${(Number(l.episodes)*Number(l.rate)).toLocaleString()}</td>
+            </tr>`).join('')}
+          <tr class="subtotal-row">
+            <td colspan="2"><strong>小計</strong></td>
+            <td style="text-align:center"><strong>${u.eps}</strong></td>
+            <td style="text-align:right"><strong>CAD $${u.pay.toLocaleString()}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`).join('');
+
+  const html=`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"/>
+  <title>稿費結算報表 ${fmtDate(s)}–${fmtDate(e)}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a18;font-size:13px;padding:32px 40px}
+    h1{font-size:18px;font-weight:600;margin-bottom:4px}
+    .meta{font-size:12px;color:#666;margin-bottom:24px}
+    h2{font-size:14px;font-weight:600;margin:24px 0 12px;padding-bottom:6px;border-bottom:1.5px solid #1a1a18}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    th{font-size:12px;font-weight:500;text-align:left;padding:6px 8px;border-bottom:1px solid #ccc;color:#666}
+    td{padding:7px 8px;border-bottom:0.5px solid #eee;font-size:13px}
+    .total-row td{font-weight:600;border-top:1.5px solid #1a1a18;border-bottom:none;padding-top:10px}
+    .detail-section{margin-bottom:28px;page-break-inside:avoid}
+    .detail-header{font-size:14px;font-weight:600;margin-bottom:8px}
+    .subtotal-row td{background:#f9f9f7;font-size:12px}
+    .page-break{page-break-before:always}
+    @media print{body{padding:20px 28px}@page{margin:1.5cm}}
+  </style></head><body>
+  <h1>稿費結算報表</h1>
+  <p class="meta">期間：${fmtDate(s)} – ${fmtDate(e)} &nbsp;·&nbsp; 產出日期：${printDate} &nbsp;·&nbsp; CineAI Studios</p>
+  <h2>摘要</h2>
+  <table>
+    <thead><tr><th>#</th><th>員工姓名</th><th style="text-align:center">申報筆數</th><th style="text-align:center">集數</th><th style="text-align:right">稿費金額</th></tr></thead>
+    <tbody>
+      ${summaryRows}
+      <tr class="total-row">
+        <td colspan="2">合計</td>
+        <td style="text-align:center">${logs.length}</td>
+        <td style="text-align:center">${total}</td>
+        <td style="text-align:right">CAD $${totalPay.toLocaleString()}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="page-break"></div>
+  <h2>明細</h2>
+  ${detailSections}
+  </body></html>`;
+
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),500);
 }
 </script>
 </body>
