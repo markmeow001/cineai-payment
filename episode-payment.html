@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CineAI 集數稿費申報</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
+.wrap{max-width:520px;margin:0 auto;padding:1.5rem 1rem 4rem}
+.screen{display:none}.screen.active{display:block}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.lbl{font-size:13px;color:#666;display:block;margin-bottom:6px;margin-top:12px}
+.lbl:first-child{margin-top:0}
+input,select,textarea{width:100%;padding:8px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:14px;background:#fff;color:#1a1a18;outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#378ADD;box-shadow:0 0 0 2px rgba(55,138,221,0.15)}
+button{padding:8px 16px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:14px;background:#fff;color:#1a1a18;cursor:pointer;font-family:inherit;transition:background 0.15s}
+button:hover{background:#f0f0ee}
+button:active{transform:scale(0.98)}
+button.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+button.primary:hover{background:#333}
+button.full{width:100%}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+.metric-card{background:#f5f5f3;border-radius:8px;padding:1rem}
+.metric-label{font-size:12px;color:#666;margin-bottom:4px}
+.metric-value{font-size:20px;font-weight:500}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:0.5px solid rgba(0,0,0,0.1)}
+.nav-title{font-size:16px;font-weight:500}
+.nav-sub{font-size:13px;color:#666}
+.tab-bar{display:flex;border-bottom:0.5px solid rgba(0,0,0,0.1);margin-bottom:1.5rem}
+.tab{padding:8px 14px;font-size:13px;cursor:pointer;color:#666;border-bottom:2px solid transparent;margin-bottom:-0.5px;background:none;border-top:none;border-left:none;border-right:none;border-radius:0}
+.tab.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap}
+.badge-pending{background:#FAEEDA;color:#633806}
+.badge-approved{background:#EAF3DE;color:#27500A}
+.badge-settled{background:#E6F1FB;color:#0C447C}
+.badge-rejected{background:#FCEBEB;color:#791F1F}
+.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.row:last-child{border-bottom:none}
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem}
+.alert-error{background:#FCEBEB;color:#791F1F}
+.alert-success{background:#EAF3DE;color:#27500A}
+.avatar{width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#185FA5;flex-shrink:0}
+.tag{display:inline-block;background:#f5f5f3;border:0.5px solid rgba(0,0,0,0.15);border-radius:20px;font-size:12px;padding:4px 10px;margin:3px;cursor:pointer;color:#1a1a18;transition:all 0.15s}
+.tag.selected{background:#E6F1FB;border-color:#378ADD;color:#185FA5}
+.tag:hover{background:#eee}
+.icon-btn{background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:#666}
+.icon-btn:hover{background:#f5f5f3}
+.icon-btn.approve{color:#27500A;border-color:#639922}
+.icon-btn.approve:hover{background:#EAF3DE}
+.icon-btn.reject-btn{color:#791F1F;border-color:#E24B4A}
+.icon-btn.reject-btn:hover{background:#FCEBEB}
+.icon-btn.settle{color:#0C447C;border-color:#378ADD}
+.icon-btn.settle:hover{background:#E6F1FB}
+.spinner{width:20px;height:20px;border:2px solid rgba(0,0,0,0.1);border-top-color:#378ADD;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.period-chip{display:inline-flex;background:#f5f5f3;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:6px 12px;margin-bottom:10px;font-size:13px;color:#1a1a18}
+.section-title{font-size:13px;font-weight:500;color:#1a1a18;margin-bottom:10px}
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:360px}
+.login-card{max-width:360px;margin:3rem auto 0}
+.login-title{font-size:24px;font-weight:500;margin-bottom:4px}
+.login-sub{font-size:14px;color:#666;margin-bottom:1.5rem}
+@media(max-width:480px){.metric-grid{grid-template-columns:repeat(2,1fr)}.metric-grid .metric-card:last-child{grid-column:span 2}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Login -->
+<div id="s-login" class="screen active">
+  <div class="login-card">
+    <p class="login-title">集數稿費申報</p>
+    <p class="login-sub">CineAI Episode Payment Tracker</p>
+    <div class="card">
+      <div id="login-err" class="alert alert-error" style="display:none"></div>
+      <div id="login-loading" style="text-align:center;padding:0.5rem 0 1rem">
+        <div class="spinner" style="margin:0 auto 8px"></div>
+        <p style="font-size:13px;color:#666">連線 Google Sheets...</p>
+      </div>
+      <div id="login-form" style="display:none">
+        <label class="lbl" style="margin-top:0">選擇身份</label>
+        <select id="login-uid"><option value="">-- 請選擇 --</option></select>
+        <label class="lbl">密碼</label>
+        <input type="password" id="login-pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <button class="primary full" onclick="doLogin()" style="margin-top:14px">登入</button>
+      </div>
+    </div>
+    <p style="font-size:12px;color:#999;text-align:center">管理者密碼：<strong>admin123</strong></p>
+  </div>
+</div>
+
+<!-- Staff -->
+<div id="s-staff" class="screen">
+  <div class="nav-bar">
+    <div><p class="nav-title" id="staff-title">—</p><p class="nav-sub">集數申報</p></div>
+    <button onclick="doLogout()">登出</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="staffTab('submit',this)">新增申報</button>
+    <button class="tab" onclick="staffTab('history',this)">我的紀錄</button>
+  </div>
+  <div id="st-submit">
+    <div class="card">
+      <p class="section-title">製作日期範圍</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="lbl" style="margin-top:0">開始日期</label><input type="date" id="date-start"/></div>
+        <div><label class="lbl" style="margin-top:0">結束日期</label><input type="date" id="date-end"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="section-title">選擇劇集（可多選）</p>
+      <div id="drama-tags"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input type="text" id="custom-drama" placeholder="輸入新劇名..."/>
+        <button onclick="addCustomDrama()" style="white-space:nowrap;flex-shrink:0">+ 新增</button>
+      </div>
+    </div>
+    <div class="card" id="ep-card" style="display:none">
+      <p class="section-title">填寫集數</p>
+      <div id="ep-list"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08);margin-top:4px">
+        <span style="font-size:13px;color:#666">合計集數</span>
+        <span style="font-size:18px;font-weight:500" id="ep-total">0 集</span>
+      </div>
+    </div>
+    <div id="submit-msg" class="alert" style="display:none"></div>
+    <button class="primary full" onclick="submitLog()" id="submit-btn">送出申報</button>
+  </div>
+  <div id="st-history" style="display:none"><div id="my-logs-list"></div></div>
+</div>
+
+<!-- Admin -->
+<div id="s-admin" class="screen">
+  <div class="nav-bar">
+    <div><p class="nav-title">管理者儀表板</p></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="refreshAdmin()" class="icon-btn">重新整理</button>
+      <button onclick="doLogout()">登出</button>
+    </div>
+  </div>
+  <div class="metric-grid">
+    <div class="metric-card"><p class="metric-label">待審申報</p><p class="metric-value" id="stat-pending">—</p></div>
+    <div class="metric-card"><p class="metric-label">已核准未結算</p><p class="metric-value" id="stat-approved">—</p></div>
+    <div class="metric-card"><p class="metric-label">本期應付</p><p class="metric-value" id="stat-amount" style="font-size:15px">—</p></div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="adminTab('pending',this)">待審</button>
+    <button class="tab" onclick="adminTab('approved',this)">已核准</button>
+    <button class="tab" onclick="adminTab('settled',this)">已結算</button>
+    <button class="tab" onclick="adminTab('staff',this)">員工管理</button>
+  </div>
+  <div id="at-pending"><div id="pending-list"></div></div>
+  <div id="at-approved" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <p style="font-size:13px;color:#666">一次結算所有已核准申報</p>
+      <button class="icon-btn settle" onclick="settleAll()">全部結算</button>
+    </div>
+    <div id="approved-list"></div>
+  </div>
+  <div id="at-settled" style="display:none"><div id="settled-list"></div></div>
+  <div id="at-staff" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <p style="font-size:13px;color:#666">管理員工帳號與稿費單價</p>
+      <button onclick="openAddStaff()">+ 新增員工</button>
+    </div>
+    <div id="staff-list"></div>
+  </div>
+</div>
+
+<!-- Reject screen -->
+<div id="s-reject" class="screen">
+  <div class="nav-bar">
+    <div><p class="nav-title">退回申報</p></div>
+    <button onclick="cancelReject()">取消</button>
+  </div>
+  <div class="card" id="reject-preview"></div>
+  <label class="lbl">退回原因 <span style="color:#E24B4A">*</span></label>
+  <textarea id="reject-reason" rows="3" style="resize:vertical" placeholder="請說明退回原因，員工可以查看..."></textarea>
+  <button onclick="confirmReject()" style="width:100%;margin-top:12px;color:#791F1F;border-color:#E24B4A">確認退回</button>
+</div>
+
+<!-- Edit screen -->
+<div id="s-edit" class="screen">
+  <div class="nav-bar">
+    <div><p class="nav-title">修改申報</p><p class="nav-sub" id="edit-subtitle">—</p></div>
+    <button onclick="cancelEdit()">取消</button>
+  </div>
+  <div class="card">
+    <p class="section-title">製作日期範圍</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="lbl" style="margin-top:0">開始日期</label><input type="date" id="edit-start"/></div>
+      <div><label class="lbl" style="margin-top:0">結束日期</label><input type="date" id="edit-end"/></div>
+    </div>
+  </div>
+  <div class="card">
+    <p class="section-title">集數</p>
+    <div style="display:flex;align-items:center;gap:10px">
+      <input type="number" id="edit-eps" min="1" style="width:80px"/>
+      <span style="font-size:13px;color:#666">集</span>
+    </div>
+  </div>
+  <div id="edit-msg" class="alert" style="display:none"></div>
+  <button class="primary full" onclick="saveEdit()">儲存修改</button>
+</div>
+
+<!-- Staff modal -->
+<div id="modal-staff" class="modal-bg">
+  <div class="modal">
+    <p style="font-size:16px;font-weight:500;margin-bottom:1rem" id="modal-title">新增員工</p>
+    <div id="modal-err" class="alert alert-error" style="display:none"></div>
+    <input type="hidden" id="edit-uid"/>
+    <label class="lbl" style="margin-top:0">姓名 <span style="color:#E24B4A">*</span></label>
+    <input type="text" id="s-name" placeholder="例：王小明"/>
+    <label class="lbl">英文/暱稱（選填）</label>
+    <input type="text" id="s-nick" placeholder="例：Ming"/>
+    <label class="lbl">稿費單價（CAD/集）<span style="color:#E24B4A">*</span></label>
+    <input type="number" id="s-rate" placeholder="例：20"/>
+    <label class="lbl">密碼 <span style="color:#E24B4A">*</span></label>
+    <input type="text" id="s-pass" placeholder="設定登入密碼"/>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="primary" style="flex:1" onclick="saveStaff()">儲存</button>
+      <button onclick="closeModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbx2TzkRW0dj-GhVe5jICJ1aGR5PTYVqaKSHidUCCnrdsfaK2WpCdh8l0sdLZ10NKMj25Q/exec';
+const ADMIN_PASS='admin123';
+let allUsers=[],allLogs=[],allDramas=[],cu=null,selDramas=[],epCounts={},rejectingId=null,editingId=null;
+
+async function post(body){
+  const r=await fetch(API,{method:'POST',body:JSON.stringify(body)});
+  return r.json();
+}
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function dname(u){return u.nick?u.name+' ('+u.nick+')':u.name}
+function initials(u){return(u.nick||u.name).slice(0,2).toUpperCase()}
+function fmtDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p[1]+'/'+p[2]+'/'+p[0]}
+function fmtRange(s,e){return fmtDate(s)+' – '+fmtDate(e)}
+function statusBadge(s){const m={pending:['badge-pending','待審'],approved:['badge-approved','已核准'],settled:['badge-settled','已結算'],rejected:['badge-rejected','已退回']};const v=m[s]||['','—'];return`<span class="badge ${v[0]}">${v[1]}</span>`}
+
+async function loadInit(){
+  try{
+    const data=await post({action:'init'});
+    if(data.error)throw new Error(data.error);
+    allUsers=data.users||[];
+    allLogs=data.logs||[];
+    allDramas=data.dramas?data.dramas.map(d=>d.name||d):[];
+    buildLoginSelect();
+    document.getElementById('login-loading').style.display='none';
+    document.getElementById('login-form').style.display='block';
+  }catch(e){
+    document.getElementById('login-loading').style.display='none';
+    document.getElementById('login-form').style.display='block';
+    const err=document.getElementById('login-err');
+    err.textContent='連線失敗：'+e.message;
+    err.style.display='block';
+  }
+}
+loadInit();
+
+function buildLoginSelect(){
+  const sel=document.getElementById('login-uid');
+  sel.innerHTML='<option value="">-- 請選擇 --</option>';
+  allUsers.forEach(u=>sel.innerHTML+=`<option value="${u.uid}">${dname(u)}</option>`);
+  sel.innerHTML+='<option value="admin">管理者</option>';
+}
+
+async function doLogin(){
+  const uid=document.getElementById('login-uid').value;
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-err');
+  if(!uid){err.textContent='請選擇身份';err.style.display='block';return}
+  if(uid==='admin'){
+    if(pw!==ADMIN_PASS){err.textContent='密碼錯誤';err.style.display='block';return}
+    err.style.display='none';cu='admin';show('s-admin');renderAdminStats();return;
+  }
+  const u=allUsers.find(x=>x.uid===uid);
+  if(!u||String(u.pass)!==pw){err.textContent='密碼錯誤';err.style.display='block';return}
+  err.style.display='none';cu=uid;
+  document.getElementById('staff-title').textContent=dname(u);
+  selDramas=[];epCounts={};
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('date-start').value=today;
+  document.getElementById('date-end').value=today;
+  document.getElementById('submit-msg').style.display='none';
+  show('s-staff');renderDramaTags();renderEpList();
+}
+function doLogout(){cu=null;document.getElementById('login-pw').value='';show('s-login')}
+
+function staffTab(tab,el){
+  document.querySelectorAll('#s-staff .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.getElementById('st-submit').style.display=tab==='submit'?'block':'none';
+  document.getElementById('st-history').style.display=tab==='history'?'block':'none';
+  if(tab==='history')renderMyLogs();
+}
+
+function renderDramaTags(){
+  document.getElementById('drama-tags').innerHTML=allDramas.map(d=>
+    `<span class="tag ${selDramas.includes(d)?'selected':''}" onclick="toggleDrama(this)">${d}</span>`).join('');
+}
+function toggleDrama(el){
+  const n=el.textContent.trim();
+  if(selDramas.includes(n)){selDramas=selDramas.filter(d=>d!==n);delete epCounts[n]}
+  else{selDramas.push(n);epCounts[n]=1}
+  el.classList.toggle('selected');renderEpList();
+}
+async function addCustomDrama(){
+  const inp=document.getElementById('custom-drama');const n=inp.value.trim();if(!n)return;
+  if(!allDramas.includes(n)){allDramas.push(n);post({action:'addDrama',name:n})}
+  if(!selDramas.includes(n)){selDramas.push(n);epCounts[n]=1}
+  inp.value='';renderDramaTags();renderEpList();
+}
+function renderEpList(){
+  const card=document.getElementById('ep-card');
+  if(!selDramas.length){card.style.display='none';return}
+  card.style.display='block';
+  document.getElementById('ep-list').innerHTML=selDramas.map((d,i)=>`
+    <div class="row">
+      <span style="flex:1;font-size:13px">${d}</span>
+      <input type="number" min="1" max="500" value="${epCounts[d]||1}" style="width:60px" onchange="epCounts[selDramas[${i}]]=(parseInt(this.value)||1);updateTotal()"/>
+      <span style="font-size:12px;color:#666">集</span>
+      <button style="background:none;border:none;color:#999;cursor:pointer;font-size:15px;padding:0 2px" onclick="removeEp(${i})">✕</button>
+    </div>`).join('');
+  updateTotal();
+}
+function removeEp(i){const n=selDramas[i];selDramas.splice(i,1);delete epCounts[n];renderDramaTags();renderEpList()}
+function updateTotal(){const t=selDramas.reduce((s,d)=>s+(parseInt(epCounts[d])||0),0);document.getElementById('ep-total').textContent=t+' 集'}
+
+async function submitLog(){
+  const s=document.getElementById('date-start').value;
+  const e=document.getElementById('date-end').value;
+  const msg=document.getElementById('submit-msg');
+  if(!s||!e){msg.className='alert alert-error';msg.textContent='請選擇日期範圍';msg.style.display='block';return}
+  if(s>e){msg.className='alert alert-error';msg.textContent='結束日期不能早於開始日期';msg.style.display='block';return}
+  if(!selDramas.length){msg.className='alert alert-error';msg.textContent='請選擇至少一部劇集';msg.style.display='block';return}
+  const u=allUsers.find(x=>x.uid===cu);
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true;btn.textContent='送出中...';
+  const now=new Date().toISOString();
+  let hasErr=false;
+  for(const d of selDramas){
+    const dup=allLogs.find(l=>l.user===cu&&l.drama===d&&String(l.dateStart).slice(0,10)===s&&String(l.dateEnd).slice(0,10)===e&&l.status!=='rejected');
+    if(dup)continue;
+    const res=await post({action:'addLog',user:cu,name:dname(u),drama:d,episodes:parseInt(epCounts[d])||0,rate:u.rate,dateStart:s,dateEnd:e,submittedAt:now});
+    if(res&&res.error){hasErr=true;break}
+    allLogs.push({id:res.id,user:cu,name:dname(u),drama:d,episodes:parseInt(epCounts[d])||0,rate:u.rate,dateStart:s,dateEnd:e,status:'pending',submittedAt:now,rejectReason:'',reviewedAt:'',settledAt:''});
+  }
+  btn.disabled=false;btn.textContent='送出申報';
+  if(hasErr){msg.className='alert alert-error';msg.textContent='送出時發生錯誤，請重試';msg.style.display='block';return}
+  msg.className='alert alert-success';msg.textContent='申報成功！等待審核中。';msg.style.display='block';
+  selDramas=[];epCounts={};renderDramaTags();renderEpList();
+  setTimeout(()=>msg.style.display='none',4000);
+}
+
+function renderMyLogs(){
+  const logs=allLogs.filter(l=>l.user===cu).sort((a,b)=>String(b.submittedAt).localeCompare(String(a.submittedAt)));
+  const el=document.getElementById('my-logs-list');
+  if(!logs.length){el.innerHTML='<p style="font-size:13px;color:#666;text-align:center;padding:2rem 0">尚無申報紀錄</p>';return}
+  const byPeriod={};
+  logs.forEach(l=>{const k=String(l.dateStart).slice(0,10)+'~'+String(l.dateEnd).slice(0,10);if(!byPeriod[k])byPeriod[k]=[];byPeriod[k].push(l)});
+  el.innerHTML=Object.entries(byPeriod).map(([k,items])=>`
+    <div class="card">
+      <div class="period-chip">${fmtRange(items[0].dateStart,items[0].dateEnd)}</div>
+      ${items.map(l=>`
+        <div class="row">
+          <div style="flex:1">
+            <p style="font-size:13px;font-weight:500">${l.drama}</p>
+            <p style="font-size:12px;color:#666">${l.episodes} 集</p>
+            ${l.status==='rejected'&&l.rejectReason?`<p style="font-size:11px;color:#791F1F;margin-top:2px">退回原因：${l.rejectReason}</p>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${statusBadge(l.status)}
+            ${l.status==='pending'||l.status==='rejected'?`<button class="icon-btn" onclick="openEdit('${l.id}')">修改</button>`:''}
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function openEdit(id){
+  const log=allLogs.find(l=>l.id===id);if(!log)return;
+  editingId=id;
+  document.getElementById('edit-subtitle').textContent=log.drama;
+  document.getElementById('edit-start').value=String(log.dateStart).slice(0,10);
+  document.getElementById('edit-end').value=String(log.dateEnd).slice(0,10);
+  document.getElementById('edit-eps').value=log.episodes;
+  document.getElementById('edit-msg').style.display='none';
+  show('s-edit');
+}
+function cancelEdit(){show('s-staff');staffTab('history',document.querySelectorAll('#s-staff .tab')[1])}
+async function saveEdit(){
+  const s=document.getElementById('edit-start').value;
+  const e=document.getElementById('edit-end').value;
+  const eps=parseInt(document.getElementById('edit-eps').value)||0;
+  const msg=document.getElementById('edit-msg');
+  if(!s||!e||s>e){msg.className='alert alert-error';msg.textContent='日期範圍不正確';msg.style.display='block';return}
+  if(eps<1){msg.className='alert alert-error';msg.textContent='集數至少 1 集';msg.style.display='block';return}
+  const now=new Date().toISOString();
+  const res=await post({action:'updateLog',id:editingId,field:'edit',dateStart:s,dateEnd:e,episodes:eps,submittedAt:now});
+  if(res&&res.error){msg.className='alert alert-error';msg.textContent='更新失敗';msg.style.display='block';return}
+  const idx=allLogs.findIndex(l=>l.id===editingId);
+  if(idx>-1){allLogs[idx].dateStart=s;allLogs[idx].dateEnd=e;allLogs[idx].episodes=eps;allLogs[idx].status='pending';allLogs[idx].rejectReason='';allLogs[idx].submittedAt=now}
+  msg.className='alert alert-success';msg.textContent='修改成功，已重新送審';msg.style.display='block';
+  setTimeout(()=>{show('s-staff');staffTab('history',document.querySelectorAll('#s-staff .tab')[1])},1500);
+}
+
+async function refreshAdmin(){
+  document.getElementById('stat-pending').textContent='...';
+  document.getElementById('stat-approved').textContent='...';
+  document.getElementById('stat-amount').textContent='...';
+  try{
+    const data=await post({action:'init'});
+    allUsers=data.users||[];allLogs=data.logs||[];allDramas=data.dramas?data.dramas.map(d=>d.name||d):[];
+  }catch(e){}
+  renderAdminStats();
+}
+
+function renderAdminStats(){
+  const pending=allLogs.filter(l=>l.status==='pending');
+  const approved=allLogs.filter(l=>l.status==='approved');
+  const pay=approved.reduce((s,l)=>s+(Number(l.episodes)*Number(l.rate)),0);
+  document.getElementById('stat-pending').textContent=pending.length;
+  document.getElementById('stat-approved').textContent=approved.length;
+  document.getElementById('stat-amount').textContent='CAD $'+pay.toLocaleString();
+  renderLogList('pending-list',pending,false);
+  renderLogList('approved-list',approved,true);
+  renderSettledList(allLogs.filter(l=>l.status==='settled').sort((a,b)=>String(b.settledAt).localeCompare(String(a.settledAt))));
+}
+
+function adminTab(tab,el){
+  document.querySelectorAll('#s-admin .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  ['pending','approved','settled','staff'].forEach(t=>document.getElementById('at-'+t).style.display=t===tab?'block':'none');
+  if(tab==='staff')renderStaffList();
+}
+
+function renderLogList(elId,logs,showSettle){
+  const el=document.getElementById(elId);
+  if(!logs.length){el.innerHTML='<p style="font-size:13px;color:#666;padding:1rem 0">無資料</p>';return}
+  const byUser={};
+  logs.forEach(l=>{if(!byUser[l.user])byUser[l.user]={name:l.name,items:[]};byUser[l.user].items.push(l)});
+  el.innerHTML=Object.entries(byUser).map(([uid,u])=>`
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="avatar">${(u.name||'').slice(0,2).toUpperCase()}</div>
+        <p style="font-size:14px;font-weight:500">${u.name}</p>
+        <span style="font-size:12px;color:#666;margin-left:auto">${u.items.length} 筆 · ${u.items.reduce((s,i)=>s+Number(i.episodes),0)} 集</span>
+      </div>
+      ${u.items.map(l=>`
+        <div class="row">
+          <div style="flex:1">
+            <p style="font-size:13px;font-weight:500">${l.drama}</p>
+            <p style="font-size:12px;color:#666">${fmtRange(l.dateStart,l.dateEnd)} · ${l.episodes} 集</p>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${!showSettle
+              ?`<button class="icon-btn approve" onclick="approveLog('${l.id}')">核准</button><button class="icon-btn reject-btn" onclick="openReject('${l.id}')">退回</button>`
+              :`<button class="icon-btn settle" onclick="settleOne('${l.id}')">結算</button>`}
+          </div>
+        </div>`).join('')}
+      ${showSettle?`<div style="text-align:right;padding-top:8px;border-top:0.5px solid rgba(0,0,0,0.08);margin-top:4px"><span style="font-size:12px;color:#666">小計 CAD $${u.items.reduce((s,i)=>s+(Number(i.episodes)*Number(i.rate)),0).toLocaleString()}</span></div>`:''}
+    </div>`).join('');
+}
+
+function renderSettledList(logs){
+  const el=document.getElementById('settled-list');
+  if(!logs.length){el.innerHTML='<p style="font-size:13px;color:#666;padding:1rem 0">尚無結算紀錄</p>';return}
+  const byUser={};
+  logs.forEach(l=>{if(!byUser[l.user])byUser[l.user]={name:l.name,items:[]};byUser[l.user].items.push(l)});
+  el.innerHTML=Object.entries(byUser).map(([uid,u])=>`
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="avatar">${(u.name||'').slice(0,2).toUpperCase()}</div>
+        <div style="flex:1">
+          <p style="font-size:14px;font-weight:500">${u.name}</p>
+          <p style="font-size:12px;color:#666">${u.items.length} 筆 · 總計 CAD $${u.items.reduce((s,i)=>s+(Number(i.episodes)*Number(i.rate)),0).toLocaleString()}</p>
+        </div>
+      </div>
+      ${u.items.map(l=>`
+        <div class="row">
+          <div style="flex:1">
+            <p style="font-size:13px">${l.drama}</p>
+            <p style="font-size:12px;color:#666">${fmtRange(l.dateStart,l.dateEnd)} · ${l.episodes} 集</p>
+          </div>
+          <span class="badge badge-settled">已結算</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+async function approveLog(id){
+  const now=new Date().toISOString();
+  await post({action:'updateLog',id,field:'status',value:'approved',reviewedAt:now});
+  const idx=allLogs.findIndex(l=>l.id===id);
+  if(idx>-1){allLogs[idx].status='approved';allLogs[idx].reviewedAt=now}
+  renderAdminStats();
+}
+function openReject(id){
+  rejectingId=id;
+  const log=allLogs.find(l=>l.id===id);
+  document.getElementById('reject-preview').innerHTML=`
+    <p style="font-size:13px;font-weight:500;margin-bottom:6px">${log.name} — ${log.drama}</p>
+    <p style="font-size:12px;color:#666">${fmtRange(log.dateStart,log.dateEnd)} · ${log.episodes} 集</p>`;
+  document.getElementById('reject-reason').value='';
+  show('s-reject');
+}
+function cancelReject(){show('s-admin')}
+async function confirmReject(){
+  const reason=document.getElementById('reject-reason').value.trim();
+  if(!reason){alert('請填寫退回原因');return}
+  const now=new Date().toISOString();
+  await post({action:'updateLog',id:rejectingId,field:'status',value:'rejected',rejectReason:reason,reviewedAt:now});
+  const idx=allLogs.findIndex(l=>l.id===rejectingId);
+  if(idx>-1){allLogs[idx].status='rejected';allLogs[idx].rejectReason=reason;allLogs[idx].reviewedAt=now}
+  show('s-admin');renderAdminStats();
+}
+async function settleOne(id){
+  const now=new Date().toISOString();
+  await post({action:'updateLog',id,field:'status',value:'settled',settledAt:now});
+  const idx=allLogs.findIndex(l=>l.id===id);
+  if(idx>-1){allLogs[idx].status='settled';allLogs[idx].settledAt=now}
+  renderAdminStats();
+}
+async function settleAll(){
+  if(!confirm('確定要結算所有已核准的申報嗎？'))return;
+  const now=new Date().toISOString();
+  const toSettle=allLogs.filter(l=>l.status==='approved');
+  for(const l of toSettle){
+    await post({action:'updateLog',id:l.id,field:'status',value:'settled',settledAt:now});
+    l.status='settled';l.settledAt=now;
+  }
+  renderAdminStats();
+}
+
+function renderStaffList(){
+  document.getElementById('staff-list').innerHTML=allUsers.map(u=>{
+    const totalEps=allLogs.filter(l=>l.user===u.uid).reduce((s,l)=>s+Number(l.episodes),0);
+    return`<div class="card">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="avatar">${initials(u)}</div>
+        <div style="flex:1">
+          <p style="font-size:14px;font-weight:500">${dname(u)}</p>
+          <p style="font-size:12px;color:#666">CAD $${u.rate}/集 · 累計 ${totalEps} 集</p>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="icon-btn" onclick="openEditStaff('${u.uid}')">編輯</button>
+          <button class="icon-btn reject-btn" onclick="askDeleteStaff('${u.uid}','${dname(u).replace(/'/g,"\\'")}')">刪除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('')||'<p style="font-size:13px;color:#666">尚無員工</p>';
+}
+function openAddStaff(){
+  document.getElementById('modal-title').textContent='新增員工';
+  document.getElementById('edit-uid').value='';
+  ['s-name','s-nick','s-rate','s-pass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modal-err').style.display='none';
+  document.getElementById('modal-staff').classList.add('open');
+}
+function openEditStaff(uid){
+  const u=allUsers.find(x=>x.uid===uid);if(!u)return;
+  document.getElementById('modal-title').textContent='編輯員工';
+  document.getElementById('edit-uid').value=uid;
+  document.getElementById('s-name').value=u.name;
+  document.getElementById('s-nick').value=u.nick||'';
+  document.getElementById('s-rate').value=u.rate;
+  document.getElementById('s-pass').value=u.pass;
+  document.getElementById('modal-err').style.display='none';
+  document.getElementById('modal-staff').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-staff').classList.remove('open')}
+async function saveStaff(){
+  const name=document.getElementById('s-name').value.trim();
+  const nick=document.getElementById('s-nick').value.trim();
+  const rate=parseInt(document.getElementById('s-rate').value);
+  const pass=document.getElementById('s-pass').value.trim();
+  const err=document.getElementById('modal-err');
+  if(!name){err.textContent='姓名不能為空';err.style.display='block';return}
+  if(!rate||rate<1){err.textContent='請填入正確的稿費單價';err.style.display='block';return}
+  if(!pass){err.textContent='請設定密碼';err.style.display='block';return}
+  err.style.display='none';
+  const euid=document.getElementById('edit-uid').value;
+  const res=await post({action:'saveUser',uid:euid||null,name,nick,rate,pass});
+  if(res&&res.error){err.textContent='儲存失敗：'+res.error;err.style.display='block';return}
+  if(euid){const idx=allUsers.findIndex(x=>x.uid===euid);if(idx>-1)allUsers[idx]={...allUsers[idx],name,nick,rate,pass}}
+  else allUsers.push({uid:res.uid,name,nick,rate,pass});
+  closeModal();buildLoginSelect();renderStaffList();
+}
+async function askDeleteStaff(uid,name){
+  if(!confirm(`確定刪除「${name}」？申報紀錄不會一併刪除。`))return;
+  await post({action:'deleteUser',uid});
+  allUsers=allUsers.filter(u=>u.uid!==uid);
+  buildLoginSelect();renderStaffList();
+}
+</script>
+</body>
+</html>
