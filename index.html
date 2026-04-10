@@ -284,10 +284,12 @@ button:disabled{opacity:0.5;cursor:not-allowed}
   </div>
   <div class="card">
     <p class="sec-title">集數</p>
-    <div style="display:flex;align-items:center;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
       <input type="number" id="edit-eps" min="1" style="width:80px"/>
       <span style="font-size:13px;color:#666">集</span>
     </div>
+    <label class="lbl">集數說明（選填）</label>
+    <input type="text" id="edit-note" placeholder="例：EP01、EP03、EP05"/>
   </div>
   <div id="edit-msg" class="alert" style="display:none"></div>
   <button class="primary full" onclick="saveEdit()">儲存修改</button>
@@ -374,6 +376,7 @@ const API='https://script.google.com/macros/s/AKfycbx2TzkRW0dj-GhVe5jICJ1aGR5PTY
 const ADMIN_PASS='drama1234';
 let allUsers=[],allLogs=[],allDramas=[],cu=null,selDramas=[],epCounts={},rejectingId=null,editingId=null;
 let currentMode='today';
+let episodeNotes={};
 let secCollapsed={active:false,finished:true};
 
 async function post(b){const r=await fetch(API,{method:'POST',body:JSON.stringify(b)});return r.json()}
@@ -427,7 +430,7 @@ async function doLogin(){
   if(!u){err.textContent='找不到此員工';err.style.display='block';return}
   err.style.display='none';cu=uid;
   document.getElementById('staff-title').textContent=dname(u);
-  selDramas=[];epCounts={};
+  selDramas=[];epCounts={};episodeNotes={};
   document.getElementById('date-start').value=today();
   document.getElementById('date-end').value=today();
   document.getElementById('today-display').textContent=todayStr();
@@ -514,7 +517,8 @@ function renderEpList(){
       <input type="number" min="1" max="500" value="${epCounts[d]||1}" style="width:60px" onchange="epCounts[selDramas[${i}]]=(parseInt(this.value)||1);updateTotal();if((parseInt(this.value)||0)>30)this.style.borderColor='#E24B4A';else this.style.borderColor=''"/>
       <span style="font-size:12px;color:#666">集</span>
       <button style="background:none;border:none;color:#aaa;cursor:pointer;font-size:15px;padding:0 2px" onclick="removeEp(${i})">✕</button>
-    </div>`).join('');
+    </div>
+    <input type="text" placeholder="集數說明（選填）例：EP01、EP03、EP05" value="${episodeNotes[d]||''}" style="margin-top:4px;margin-bottom:8px;font-size:12px;padding:6px 10px;color:#666" data-drama="${i}" onchange="episodeNotes[selDramas[${i}]]=this.value"/>`).join('');
   updateTotal();
 }
 function removeEp(i){const n=selDramas[i];selDramas.splice(i,1);delete epCounts[n];renderDramaTags();renderEpList()}
@@ -530,9 +534,12 @@ function submitLog(){
   const total=selDramas.reduce((s,d)=>s+(parseInt(epCounts[d])||0),0);
   document.getElementById('confirm-period-txt').textContent='申報期間：'+fmtRange(s,e);
   document.getElementById('confirm-items-list').innerHTML=selDramas.map(d=>`
-    <div class="row">
-      <span style="flex:1;font-size:13px">${d}</span>
-      <span style="font-size:13px;font-weight:500">${epCounts[d]||1} 集</span>
+    <div class="row" style="flex-direction:column;align-items:flex-start;gap:2px">
+      <div style="display:flex;width:100%;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:500">${d}</span>
+        <span style="font-size:13px">${epCounts[d]||1} 集</span>
+      </div>
+      ${episodeNotes[d]?`<span style="font-size:11px;color:#888">${episodeNotes[d]}</span>`:''}
     </div>`).join('');
   document.getElementById('confirm-total-txt').textContent=total+' 集';
   document.getElementById('modal-confirm-submit').classList.add('open');
@@ -548,15 +555,15 @@ async function doSubmit(){
   for(const d of selDramas){
     const dup=allLogs.find(l=>l.user===cu&&l.drama===d&&String(l.dateStart).slice(0,10)===s&&String(l.dateEnd).slice(0,10)===e&&l.status!=='rejected');
     if(dup)continue;
-    const res=await post({action:'addLog',user:cu,name:dname(u),drama:d,episodes:parseInt(epCounts[d])||0,rate:u.rate,dateStart:s,dateEnd:e,submittedAt:now});
+    const res=await post({action:'addLog',user:cu,name:dname(u),drama:d,episodes:parseInt(epCounts[d])||0,rate:u.rate,dateStart:s,dateEnd:e,submittedAt:now,episodeNote:episodeNotes[d]||''});
     if(res&&res.error){hasErr=true;break}
-    allLogs.push({id:res.id,user:cu,name:dname(u),drama:d,episodes:parseInt(epCounts[d])||0,rate:u.rate,dateStart:s,dateEnd:e,status:'pending',submittedAt:now,rejectReason:'',reviewedAt:'',settledAt:''});
+    allLogs.push({id:res.id,user:cu,name:dname(u),drama:d,episodes:parseInt(epCounts[d])||0,rate:u.rate,dateStart:s,dateEnd:e,status:'pending',submittedAt:now,rejectReason:'',reviewedAt:'',settledAt:'',episodeNote:episodeNotes[d]||''});
   }
   btn.disabled=false;btn.textContent='送出申報';
   const msg=document.getElementById('submit-msg');
   if(hasErr){msg.className='alert alert-error';msg.textContent='送出時發生錯誤，請重試';msg.style.display='block';return}
   msg.className='alert alert-success';msg.textContent='申報成功！等待審核中。';msg.style.display='block';
-  selDramas=[];epCounts={};renderDramaTags();renderEpList();
+  selDramas=[];epCounts={};episodeNotes={};renderDramaTags();renderEpList();
   setTimeout(()=>msg.style.display='none',4000);
 }
 
@@ -573,7 +580,7 @@ function renderMyLogs(){
         <div class="row">
           <div style="flex:1">
             <p style="font-size:13px;font-weight:500">${l.drama}</p>
-            <p style="font-size:12px;color:#666">${l.episodes} 集</p>
+            <p style="font-size:12px;color:#666">${l.episodes} 集${l.episodeNote?' · '+l.episodeNote:''}</p>
             ${l.status==='rejected'&&l.rejectReason?`<p style="font-size:11px;color:#791F1F;margin-top:2px">退回原因：${l.rejectReason}</p>`:''}
           </div>
           <div style="display:flex;align-items:center;gap:8px">
@@ -591,6 +598,7 @@ function openEdit(id){
   document.getElementById('edit-start').value=String(log.dateStart).slice(0,10);
   document.getElementById('edit-end').value=String(log.dateEnd).slice(0,10);
   document.getElementById('edit-eps').value=log.episodes;
+  document.getElementById('edit-note').value=log.episodeNote||'';
   document.getElementById('edit-msg').style.display='none';
   show('s-edit');
 }
@@ -602,10 +610,11 @@ async function saveEdit(){
   if(!s||!e||s>e){msg.className='alert alert-error';msg.textContent='日期範圍不正確';msg.style.display='block';return}
   if(eps<1){msg.className='alert alert-error';msg.textContent='集數至少 1 集';msg.style.display='block';return}
   const now=new Date().toISOString();
-  const res=await post({action:'updateLog',id:editingId,field:'edit',dateStart:s,dateEnd:e,episodes:eps,submittedAt:now});
+  const editNote=document.getElementById('edit-note')?document.getElementById('edit-note').value:allLogs.find(l=>l.id===editingId)?.episodeNote||'';
+  const res=await post({action:'updateLog',id:editingId,field:'edit',dateStart:s,dateEnd:e,episodes:eps,episodeNote:editNote,submittedAt:now});
   if(res&&res.error){msg.className='alert alert-error';msg.textContent='更新失敗';msg.style.display='block';return}
   const idx=allLogs.findIndex(l=>l.id===editingId);
-  if(idx>-1){allLogs[idx].dateStart=s;allLogs[idx].dateEnd=e;allLogs[idx].episodes=eps;allLogs[idx].status='pending';allLogs[idx].rejectReason='';allLogs[idx].submittedAt=now}
+  if(idx>-1){allLogs[idx].dateStart=s;allLogs[idx].dateEnd=e;allLogs[idx].episodes=eps;allLogs[idx].episodeNote=editNote;allLogs[idx].status='pending';allLogs[idx].rejectReason='';allLogs[idx].submittedAt=now}
   msg.className='alert alert-success';msg.textContent='修改成功，已重新送審';msg.style.display='block';
   setTimeout(()=>{show('s-staff');staffTab('history',document.querySelectorAll('#s-staff .tab')[1])},1500);
 }
@@ -649,6 +658,7 @@ function renderLogList(elId,logs,showSettle){
           <div style="flex:1">
             <p style="font-size:13px;font-weight:500">${l.drama}</p>
             <p style="font-size:12px;color:#666">${fmtRange(l.dateStart,l.dateEnd)} · ${l.episodes} 集</p>
+            ${l.episodeNote?`<p style="font-size:11px;color:#888;margin-top:2px">${l.episodeNote}</p>`:''}
           </div>
           <div style="display:flex;gap:6px;align-items:center">
             ${!showSettle
