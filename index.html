@@ -112,6 +112,9 @@ button:disabled{opacity:0.5;cursor:not-allowed}
 </div>
 
 <div id="s-staff" class="screen">
+  <div id="staff-notice" style="display:none;background:#FAEEDA;border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#633806;cursor:pointer" onclick="staffTab('history',document.querySelectorAll('#s-staff .tab')[1])">
+    有申報被退回，點此查看 →
+  </div>
   <div class="nav-bar">
     <div><p class="nav-title" id="staff-title">—</p><p class="nav-sub">集數申報</p></div>
     <button onclick="doLogout()">登出</button>
@@ -290,6 +293,28 @@ button:disabled{opacity:0.5;cursor:not-allowed}
   <button class="primary full" onclick="saveEdit()">儲存修改</button>
 </div>
 
+<div id="modal-admin-edit" class="modal-bg">
+  <div class="modal">
+    <p style="font-size:16px;font-weight:500;margin-bottom:8px">編輯申報</p>
+    <p style="font-size:13px;color:#666;margin-bottom:1rem" id="admin-edit-info"></p>
+    <input type="hidden" id="admin-edit-id"/>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem">
+      <div><label class="lbl" style="margin-top:0">開始日期</label><input type="date" id="admin-edit-start"/></div>
+      <div><label class="lbl" style="margin-top:0">結束日期</label><input type="date" id="admin-edit-end"/></div>
+    </div>
+    <label class="lbl" style="margin-top:0">集數</label>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+      <input type="number" id="admin-edit-eps" min="1" style="width:80px"/>
+      <span style="font-size:13px;color:#666">集</span>
+    </div>
+    <div id="admin-edit-err" class="alert alert-error" style="display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="primary" style="flex:1" onclick="saveAdminEdit()">儲存並核准</button>
+      <button onclick="closeModal('modal-admin-edit')">取消</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-staff" class="modal-bg">
   <div class="modal">
     <p style="font-size:16px;font-weight:500;margin-bottom:1rem" id="modal-title">新增員工</p>
@@ -304,6 +329,22 @@ button:disabled{opacity:0.5;cursor:not-allowed}
     <div style="display:flex;gap:8px;margin-top:18px">
       <button class="primary" style="flex:1" onclick="saveStaff()">儲存</button>
       <button onclick="closeModal('modal-staff')">取消</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-confirm-submit" class="modal-bg">
+  <div class="modal">
+    <p style="font-size:16px;font-weight:500;margin-bottom:8px">確認申報內容</p>
+    <p style="font-size:13px;color:#666;margin-bottom:1rem" id="confirm-period-txt"></p>
+    <div id="confirm-items-list" style="margin-bottom:1rem"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08);margin-bottom:1.5rem">
+      <span style="font-size:13px;font-weight:500">合計</span>
+      <span style="font-size:15px;font-weight:500" id="confirm-total-txt"></span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="primary" style="flex:1" onclick="doSubmit()">確認送出</button>
+      <button onclick="closeModal('modal-confirm-submit')">返回修改</button>
     </div>
   </div>
 </div>
@@ -330,7 +371,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
 </div>
 <script>
 const API='https://script.google.com/macros/s/AKfycbx2TzkRW0dj-GhVe5jICJ1aGR5PTYVqaKSHidUCCnrdsfaK2WpCdh8l0sdLZ10NKMj25Q/exec';
-const ADMIN_PASS='admin123';
+const ADMIN_PASS='drama1234';
 let allUsers=[],allLogs=[],allDramas=[],cu=null,selDramas=[],epCounts={},rejectingId=null,editingId=null;
 let currentMode='today';
 let secCollapsed={active:false,finished:true};
@@ -394,6 +435,8 @@ async function doLogin(){
   document.getElementById('drama-search').value='';
   setMode('today',document.getElementById('mode-today'));
   show('s-staff');renderDramaTags();renderEpList();
+  const rejected=allLogs.filter(l=>l.user===uid&&l.status==='rejected');
+  document.getElementById('staff-notice').style.display=rejected.length?'block':'none';
 }
 function doLogout(){cu=null;document.getElementById('login-pw').value='';show('s-login')}
 
@@ -468,7 +511,7 @@ function renderEpList(){
   document.getElementById('ep-list').innerHTML=selDramas.map((d,i)=>`
     <div class="row">
       <span style="flex:1;font-size:13px">${d}</span>
-      <input type="number" min="1" max="500" value="${epCounts[d]||1}" style="width:60px" onchange="epCounts[selDramas[${i}]]=(parseInt(this.value)||1);updateTotal()"/>
+      <input type="number" min="1" max="500" value="${epCounts[d]||1}" style="width:60px" onchange="epCounts[selDramas[${i}]]=(parseInt(this.value)||1);updateTotal();if((parseInt(this.value)||0)>30)this.style.borderColor='#E24B4A';else this.style.borderColor=''"/>
       <span style="font-size:12px;color:#666">集</span>
       <button style="background:none;border:none;color:#aaa;cursor:pointer;font-size:15px;padding:0 2px" onclick="removeEp(${i})">✕</button>
     </div>`).join('');
@@ -477,12 +520,27 @@ function renderEpList(){
 function removeEp(i){const n=selDramas[i];selDramas.splice(i,1);delete epCounts[n];renderDramaTags();renderEpList()}
 function updateTotal(){const t=selDramas.reduce((s,d)=>s+(parseInt(epCounts[d])||0),0);document.getElementById('ep-total').textContent=t+' 集'}
 
-async function submitLog(){
+function submitLog(){
   const{s,e}=getDateRange();
   const msg=document.getElementById('submit-msg');
   if(!s||!e){msg.className='alert alert-error';msg.textContent='請選擇日期範圍';msg.style.display='block';return}
   if(s>e){msg.className='alert alert-error';msg.textContent='結束日期不能早於開始日期';msg.style.display='block';return}
   if(!selDramas.length){msg.className='alert alert-error';msg.textContent='請選擇至少一部劇集';msg.style.display='block';return}
+  msg.style.display='none';
+  const total=selDramas.reduce((s,d)=>s+(parseInt(epCounts[d])||0),0);
+  document.getElementById('confirm-period-txt').textContent='申報期間：'+fmtRange(s,e);
+  document.getElementById('confirm-items-list').innerHTML=selDramas.map(d=>`
+    <div class="row">
+      <span style="flex:1;font-size:13px">${d}</span>
+      <span style="font-size:13px;font-weight:500">${epCounts[d]||1} 集</span>
+    </div>`).join('');
+  document.getElementById('confirm-total-txt').textContent=total+' 集';
+  document.getElementById('modal-confirm-submit').classList.add('open');
+}
+
+async function doSubmit(){
+  closeModal('modal-confirm-submit');
+  const{s,e}=getDateRange();
   const u=allUsers.find(x=>x.uid===cu);
   const btn=document.getElementById('submit-btn');
   btn.disabled=true;btn.textContent='送出中...';
@@ -495,6 +553,7 @@ async function submitLog(){
     allLogs.push({id:res.id,user:cu,name:dname(u),drama:d,episodes:parseInt(epCounts[d])||0,rate:u.rate,dateStart:s,dateEnd:e,status:'pending',submittedAt:now,rejectReason:'',reviewedAt:'',settledAt:''});
   }
   btn.disabled=false;btn.textContent='送出申報';
+  const msg=document.getElementById('submit-msg');
   if(hasErr){msg.className='alert alert-error';msg.textContent='送出時發生錯誤，請重試';msg.style.display='block';return}
   msg.className='alert alert-success';msg.textContent='申報成功！等待審核中。';msg.style.display='block';
   selDramas=[];epCounts={};renderDramaTags();renderEpList();
@@ -593,7 +652,7 @@ function renderLogList(elId,logs,showSettle){
           </div>
           <div style="display:flex;gap:6px;align-items:center">
             ${!showSettle
-              ?`<button class="icon-btn approve" onclick="approveLog('${l.id}')">核准</button><button class="icon-btn reject-btn" onclick="openReject('${l.id}')">退回</button>`
+              ?`<button class="icon-btn" onclick="openAdminEdit('${l.id}')">編輯</button><button class="icon-btn approve" onclick="approveLog('${l.id}')">核准</button><button class="icon-btn reject-btn" onclick="openReject('${l.id}')">退回</button>`
               :`<button class="icon-btn settle" onclick="settleOne('${l.id}')">結算</button>`}
           </div>
         </div>`).join('')}
@@ -774,6 +833,38 @@ async function askDeleteStaff(uid,name){
   buildLoginSelect();renderStaffList();
 }
 
+
+function openAdminEdit(id){
+  const log=allLogs.find(l=>l.id===id);if(!log)return;
+  document.getElementById('admin-edit-id').value=id;
+  document.getElementById('admin-edit-info').textContent=log.name+' — '+log.drama;
+  document.getElementById('admin-edit-start').value=String(log.dateStart).slice(0,10);
+  document.getElementById('admin-edit-end').value=String(log.dateEnd).slice(0,10);
+  document.getElementById('admin-edit-eps').value=log.episodes;
+  document.getElementById('admin-edit-err').style.display='none';
+  document.getElementById('modal-admin-edit').classList.add('open');
+}
+
+async function saveAdminEdit(){
+  const id=document.getElementById('admin-edit-id').value;
+  const s=document.getElementById('admin-edit-start').value;
+  const e=document.getElementById('admin-edit-end').value;
+  const eps=parseInt(document.getElementById('admin-edit-eps').value)||0;
+  const err=document.getElementById('admin-edit-err');
+  if(!s||!e||s>e){err.textContent='日期範圍不正確';err.style.display='block';return}
+  if(eps<1){err.textContent='集數至少 1 集';err.style.display='block';return}
+  err.style.display='none';
+  const now=new Date().toISOString();
+  await post({action:'updateLog',id,field:'edit',dateStart:s,dateEnd:e,episodes:eps,submittedAt:now});
+  await post({action:'updateLog',id,field:'status',value:'approved',reviewedAt:now});
+  const idx=allLogs.findIndex(l=>l.id===id);
+  if(idx>-1){
+    allLogs[idx].dateStart=s;allLogs[idx].dateEnd=e;allLogs[idx].episodes=eps;
+    allLogs[idx].status='approved';allLogs[idx].reviewedAt=now;
+  }
+  closeModal('modal-admin-edit');
+  renderAdminStats();
+}
 function setExportRange(preset){
   const now=new Date();
   let s,e;
