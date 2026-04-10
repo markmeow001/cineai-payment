@@ -20,6 +20,7 @@ button:active{transform:scale(0.98)}
 button.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
 button.primary:hover{background:#333}
 button.full{width:100%}
+button:disabled{opacity:0.5;cursor:not-allowed}
 .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
 .metric-card{background:#f5f5f3;border-radius:8px;padding:1rem}
 .metric-label{font-size:12px;color:#666;margin-bottom:4px}
@@ -27,14 +28,16 @@ button.full{width:100%}
 .nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:0.5px solid rgba(0,0,0,0.1)}
 .nav-title{font-size:16px;font-weight:500}
 .nav-sub{font-size:13px;color:#666}
-.tab-bar{display:flex;border-bottom:0.5px solid rgba(0,0,0,0.1);margin-bottom:1.5rem}
-.tab{padding:8px 14px;font-size:13px;cursor:pointer;color:#666;border-bottom:2px solid transparent;margin-bottom:-0.5px;background:none;border-top:none;border-left:none;border-right:none;border-radius:0}
+.tab-bar{display:flex;border-bottom:0.5px solid rgba(0,0,0,0.1);margin-bottom:1.5rem;overflow-x:auto}
+.tab{padding:8px 14px;font-size:13px;cursor:pointer;color:#666;border-bottom:2px solid transparent;margin-bottom:-0.5px;background:none;border-top:none;border-left:none;border-right:none;border-radius:0;white-space:nowrap;flex-shrink:0}
 .tab.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap}
 .badge-pending{background:#FAEEDA;color:#633806}
 .badge-approved{background:#EAF3DE;color:#27500A}
 .badge-settled{background:#E6F1FB;color:#0C447C}
 .badge-rejected{background:#FCEBEB;color:#791F1F}
+.badge-active{background:#EAF3DE;color:#27500A}
+.badge-finished{background:#f5f5f3;color:#888}
 .row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:0.5px solid rgba(0,0,0,0.08)}
 .row:last-child{border-bottom:none}
 .alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem}
@@ -43,7 +46,9 @@ button.full{width:100%}
 .avatar{width:34px;height:34px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#185FA5;flex-shrink:0}
 .tag{display:inline-block;background:#f5f5f3;border:0.5px solid rgba(0,0,0,0.15);border-radius:20px;font-size:12px;padding:4px 10px;margin:3px;cursor:pointer;color:#1a1a18;transition:all 0.15s}
 .tag.selected{background:#E6F1FB;border-color:#378ADD;color:#185FA5}
-.tag:hover{background:#eee}
+.tag:hover{background:#e8e8e6}
+.tag.finished-tag{color:#aaa;border-color:rgba(0,0,0,0.08)}
+.tag.finished-tag.selected{background:#E6F1FB;border-color:#378ADD;color:#185FA5}
 .icon-btn{background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:#666}
 .icon-btn:hover{background:#f5f5f3}
 .icon-btn.approve{color:#27500A;border-color:#639922}
@@ -54,21 +59,34 @@ button.full{width:100%}
 .icon-btn.settle:hover{background:#E6F1FB}
 .spinner{width:20px;height:20px;border:2px solid rgba(0,0,0,0.1);border-top-color:#378ADD;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
-.period-chip{display:inline-flex;background:#f5f5f3;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:6px 12px;margin-bottom:10px;font-size:13px;color:#1a1a18}
-.section-title{font-size:13px;font-weight:500;color:#1a1a18;margin-bottom:10px}
+.period-chip{display:inline-flex;background:#f5f5f3;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:6px 12px;margin-bottom:10px;font-size:13px}
+.sec-title{font-size:13px;font-weight:500;margin-bottom:10px}
+.drama-sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 0;cursor:pointer;user-select:none}
+.drama-sec-lbl{font-size:12px;font-weight:500;color:#666;display:flex;align-items:center;gap:6px}
+.drama-sec-cnt{font-size:11px;background:#f5f5f3;border-radius:20px;padding:2px 8px;color:#999}
+.caret{font-size:10px;color:#999;transition:transform 0.2s;display:inline-block}
+.search-wrap{position:relative;margin-bottom:10px}
+.search-wrap input{padding-left:30px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#aaa;font-size:13px;pointer-events:none}
+.mode-toggle{display:flex;gap:6px;margin-bottom:1rem}
+.mode-btn{flex:1;padding:8px;font-size:13px;border-radius:8px;text-align:center;border:0.5px solid rgba(0,0,0,0.2)}
+.mode-btn.active{background:#1a1a18;color:#fff;border-color:#1a1a18}
 .modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;padding:1rem}
 .modal-bg.open{display:flex}
-.modal{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:360px}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:360px;max-height:90vh;overflow-y:auto}
 .login-card{max-width:360px;margin:3rem auto 0}
 .login-title{font-size:24px;font-weight:500;margin-bottom:4px}
 .login-sub{font-size:14px;color:#666;margin-bottom:1.5rem}
-@media(max-width:480px){.metric-grid{grid-template-columns:repeat(2,1fr)}.metric-grid .metric-card:last-child{grid-column:span 2}}
+.empty{text-align:center;padding:2rem 0;color:#aaa;font-size:13px}
+@media(max-width:480px){
+  .metric-grid{grid-template-columns:repeat(2,1fr)}
+  .metric-grid .metric-card:last-child{grid-column:span 2}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<!-- Login -->
 <div id="s-login" class="screen active">
   <div class="login-card">
     <p class="login-title">集數稿費申報</p>
@@ -81,17 +99,18 @@ button.full{width:100%}
       </div>
       <div id="login-form" style="display:none">
         <label class="lbl" style="margin-top:0">選擇身份</label>
-        <select id="login-uid"><option value="">-- 請選擇 --</option></select>
-        <label class="lbl">密碼</label>
-        <input type="password" id="login-pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <select id="login-uid" onchange="togglePwField(this.value)"><option value="">-- 請選擇 --</option></select>
+        <div id="pw-field" style="display:none">
+          <label class="lbl">管理者密碼</label>
+          <input type="password" id="login-pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')doLogin()"/>
+        </div>
         <button class="primary full" onclick="doLogin()" style="margin-top:14px">登入</button>
       </div>
     </div>
-    <p style="font-size:12px;color:#999;text-align:center">管理者密碼：<strong>admin123</strong></p>
+    <p style="font-size:12px;color:#aaa;text-align:center">管理者密碼：<strong>admin123</strong></p>
   </div>
 </div>
 
-<!-- Staff -->
 <div id="s-staff" class="screen">
   <div class="nav-bar">
     <div><p class="nav-title" id="staff-title">—</p><p class="nav-sub">集數申報</p></div>
@@ -102,23 +121,60 @@ button.full{width:100%}
     <button class="tab" onclick="staffTab('history',this)">我的紀錄</button>
   </div>
   <div id="st-submit">
-    <div class="card">
-      <p class="section-title">製作日期範圍</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div><label class="lbl" style="margin-top:0">開始日期</label><input type="date" id="date-start"/></div>
-        <div><label class="lbl" style="margin-top:0">結束日期</label><input type="date" id="date-end"/></div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-today" onclick="setMode('today',this)">今日快速申報</button>
+      <button class="mode-btn" id="mode-range" onclick="setMode('range',this)">自訂日期範圍</button>
+    </div>
+    <div id="mode-today-block">
+      <div class="card" style="padding:1rem 1.25rem">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <p style="font-size:13px;color:#666">申報日期</p>
+          <p style="font-size:14px;font-weight:500" id="today-display">—</p>
+        </div>
+      </div>
+    </div>
+    <div id="mode-range-block" style="display:none">
+      <div class="card">
+        <p class="sec-title">製作日期範圍</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="lbl" style="margin-top:0">開始日期</label><input type="date" id="date-start"/></div>
+          <div><label class="lbl" style="margin-top:0">結束日期</label><input type="date" id="date-end"/></div>
+        </div>
       </div>
     </div>
     <div class="card">
-      <p class="section-title">選擇劇集（可多選）</p>
-      <div id="drama-tags"></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <input type="text" id="custom-drama" placeholder="輸入新劇名..."/>
+      <p class="sec-title">選擇劇集</p>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="drama-search" placeholder="搜尋劇集..." oninput="renderDramaTags()"/>
+      </div>
+      <div id="sec-active">
+        <div class="drama-sec-hdr" onclick="toggleSec('active')">
+          <span class="drama-sec-lbl">
+            <span class="caret" id="caret-active">▾</span>
+            進行中
+            <span class="drama-sec-cnt" id="cnt-active">0</span>
+          </span>
+        </div>
+        <div id="body-active" style="padding-bottom:6px"></div>
+      </div>
+      <div id="sec-finished">
+        <div class="drama-sec-hdr" onclick="toggleSec('finished')">
+          <span class="drama-sec-lbl">
+            <span class="caret" id="caret-finished" style="transform:rotate(-90deg)">▾</span>
+            已完結
+            <span class="drama-sec-cnt" id="cnt-finished">0</span>
+          </span>
+        </div>
+        <div id="body-finished" style="display:none;padding-bottom:6px"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08)">
+        <input type="text" id="custom-drama" placeholder="新增劇集名稱..."/>
         <button onclick="addCustomDrama()" style="white-space:nowrap;flex-shrink:0">+ 新增</button>
       </div>
     </div>
     <div class="card" id="ep-card" style="display:none">
-      <p class="section-title">填寫集數</p>
+      <p class="sec-title">填寫集數</p>
       <div id="ep-list"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08);margin-top:4px">
         <span style="font-size:13px;color:#666">合計集數</span>
@@ -131,7 +187,6 @@ button.full{width:100%}
   <div id="st-history" style="display:none"><div id="my-logs-list"></div></div>
 </div>
 
-<!-- Admin -->
 <div id="s-admin" class="screen">
   <div class="nav-bar">
     <div><p class="nav-title">管理者儀表板</p></div>
@@ -149,6 +204,7 @@ button.full{width:100%}
     <button class="tab active" onclick="adminTab('pending',this)">待審</button>
     <button class="tab" onclick="adminTab('approved',this)">已核准</button>
     <button class="tab" onclick="adminTab('settled',this)">已結算</button>
+    <button class="tab" onclick="adminTab('dramas',this)">劇集管理</button>
     <button class="tab" onclick="adminTab('staff',this)">員工管理</button>
   </div>
   <div id="at-pending"><div id="pending-list"></div></div>
@@ -160,6 +216,13 @@ button.full{width:100%}
     <div id="approved-list"></div>
   </div>
   <div id="at-settled" style="display:none"><div id="settled-list"></div></div>
+  <div id="at-dramas" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <p style="font-size:13px;color:#666">設定劇集為進行中或已完結</p>
+      <button onclick="openAddDrama()">+ 新增劇集</button>
+    </div>
+    <div id="drama-mgmt-list"></div>
+  </div>
   <div id="at-staff" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
       <p style="font-size:13px;color:#666">管理員工帳號與稿費單價</p>
@@ -169,7 +232,6 @@ button.full{width:100%}
   </div>
 </div>
 
-<!-- Reject screen -->
 <div id="s-reject" class="screen">
   <div class="nav-bar">
     <div><p class="nav-title">退回申報</p></div>
@@ -181,21 +243,20 @@ button.full{width:100%}
   <button onclick="confirmReject()" style="width:100%;margin-top:12px;color:#791F1F;border-color:#E24B4A">確認退回</button>
 </div>
 
-<!-- Edit screen -->
 <div id="s-edit" class="screen">
   <div class="nav-bar">
     <div><p class="nav-title">修改申報</p><p class="nav-sub" id="edit-subtitle">—</p></div>
     <button onclick="cancelEdit()">取消</button>
   </div>
   <div class="card">
-    <p class="section-title">製作日期範圍</p>
+    <p class="sec-title">製作日期範圍</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div><label class="lbl" style="margin-top:0">開始日期</label><input type="date" id="edit-start"/></div>
       <div><label class="lbl" style="margin-top:0">結束日期</label><input type="date" id="edit-end"/></div>
     </div>
   </div>
   <div class="card">
-    <p class="section-title">集數</p>
+    <p class="sec-title">集數</p>
     <div style="display:flex;align-items:center;gap:10px">
       <input type="number" id="edit-eps" min="1" style="width:80px"/>
       <span style="font-size:13px;color:#666">集</span>
@@ -205,7 +266,6 @@ button.full{width:100%}
   <button class="primary full" onclick="saveEdit()">儲存修改</button>
 </div>
 
-<!-- Staff modal -->
 <div id="modal-staff" class="modal-bg">
   <div class="modal">
     <p style="font-size:16px;font-weight:500;margin-bottom:1rem" id="modal-title">新增員工</p>
@@ -217,11 +277,28 @@ button.full{width:100%}
     <input type="text" id="s-nick" placeholder="例：Ming"/>
     <label class="lbl">稿費單價（CAD/集）<span style="color:#E24B4A">*</span></label>
     <input type="number" id="s-rate" placeholder="例：20"/>
-    <label class="lbl">密碼 <span style="color:#E24B4A">*</span></label>
-    <input type="text" id="s-pass" placeholder="設定登入密碼"/>
     <div style="display:flex;gap:8px;margin-top:18px">
       <button class="primary" style="flex:1" onclick="saveStaff()">儲存</button>
-      <button onclick="closeModal()">取消</button>
+      <button onclick="closeModal('modal-staff')">取消</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-drama" class="modal-bg">
+  <div class="modal">
+    <p style="font-size:16px;font-weight:500;margin-bottom:1rem" id="modal-drama-title">新增劇集</p>
+    <div id="modal-drama-err" class="alert alert-error" style="display:none"></div>
+    <input type="hidden" id="edit-drama-orig"/>
+    <label class="lbl" style="margin-top:0">劇集名稱 <span style="color:#E24B4A">*</span></label>
+    <input type="text" id="d-name" placeholder="例：The Billionaire's Secret Butler"/>
+    <label class="lbl">狀態</label>
+    <select id="d-status">
+      <option value="active">進行中</option>
+      <option value="finished">已完結</option>
+    </select>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="primary" style="flex:1" onclick="saveDrama()">儲存</button>
+      <button onclick="closeModal('modal-drama')">取消</button>
     </div>
   </div>
 </div>
@@ -231,35 +308,33 @@ button.full{width:100%}
 const API='https://script.google.com/macros/s/AKfycbx2TzkRW0dj-GhVe5jICJ1aGR5PTYVqaKSHidUCCnrdsfaK2WpCdh8l0sdLZ10NKMj25Q/exec';
 const ADMIN_PASS='admin123';
 let allUsers=[],allLogs=[],allDramas=[],cu=null,selDramas=[],epCounts={},rejectingId=null,editingId=null;
+let currentMode='today';
+let secCollapsed={active:false,finished:true};
 
-async function post(body){
-  const r=await fetch(API,{method:'POST',body:JSON.stringify(body)});
-  return r.json();
-}
-
+async function post(b){const r=await fetch(API,{method:'POST',body:JSON.stringify(b)});return r.json()}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
 function dname(u){return u.nick?u.name+' ('+u.nick+')':u.name}
 function initials(u){return(u.nick||u.name).slice(0,2).toUpperCase()}
 function fmtDate(d){if(!d)return'';const p=String(d).slice(0,10).split('-');return p[1]+'/'+p[2]+'/'+p[0]}
-function fmtRange(s,e){return fmtDate(s)+' – '+fmtDate(e)}
+function fmtRange(s,e){return s===e?fmtDate(s):fmtDate(s)+' – '+fmtDate(e)}
+function today(){return new Date().toISOString().slice(0,10)}
+function todayStr(){const d=new Date();const w=['日','一','二','三','四','五','六'];return`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} (週${w[d.getDay()]})`}
 function statusBadge(s){const m={pending:['badge-pending','待審'],approved:['badge-approved','已核准'],settled:['badge-settled','已結算'],rejected:['badge-rejected','已退回']};const v=m[s]||['','—'];return`<span class="badge ${v[0]}">${v[1]}</span>`}
+function getDramaStatus(name){const d=allDramas.find(x=>(x.name||x)===name);return d?(d.status||'active'):'active'}
 
 async function loadInit(){
   try{
     const data=await post({action:'init'});
     if(data.error)throw new Error(data.error);
-    allUsers=data.users||[];
-    allLogs=data.logs||[];
-    allDramas=data.dramas?data.dramas.map(d=>d.name||d):[];
+    allUsers=data.users||[];allLogs=data.logs||[];allDramas=data.dramas||[];
     buildLoginSelect();
     document.getElementById('login-loading').style.display='none';
     document.getElementById('login-form').style.display='block';
   }catch(e){
     document.getElementById('login-loading').style.display='none';
     document.getElementById('login-form').style.display='block';
-    const err=document.getElementById('login-err');
-    err.textContent='連線失敗：'+e.message;
-    err.style.display='block';
+    document.getElementById('login-err').textContent='連線失敗：'+e.message;
+    document.getElementById('login-err').style.display='block';
   }
 }
 loadInit();
@@ -270,7 +345,10 @@ function buildLoginSelect(){
   allUsers.forEach(u=>sel.innerHTML+=`<option value="${u.uid}">${dname(u)}</option>`);
   sel.innerHTML+='<option value="admin">管理者</option>';
 }
-
+function togglePwField(val){
+  document.getElementById('pw-field').style.display=val==='admin'?'block':'none';
+  document.getElementById('login-err').style.display='none';
+}
 async function doLogin(){
   const uid=document.getElementById('login-uid').value;
   const pw=document.getElementById('login-pw').value;
@@ -281,17 +359,31 @@ async function doLogin(){
     err.style.display='none';cu='admin';show('s-admin');renderAdminStats();return;
   }
   const u=allUsers.find(x=>x.uid===uid);
-  if(!u||String(u.pass)!==pw){err.textContent='密碼錯誤';err.style.display='block';return}
+  if(!u){err.textContent='找不到此員工';err.style.display='block';return}
   err.style.display='none';cu=uid;
   document.getElementById('staff-title').textContent=dname(u);
   selDramas=[];epCounts={};
-  const today=new Date().toISOString().slice(0,10);
-  document.getElementById('date-start').value=today;
-  document.getElementById('date-end').value=today;
+  document.getElementById('date-start').value=today();
+  document.getElementById('date-end').value=today();
+  document.getElementById('today-display').textContent=todayStr();
   document.getElementById('submit-msg').style.display='none';
+  document.getElementById('drama-search').value='';
+  setMode('today',document.getElementById('mode-today'));
   show('s-staff');renderDramaTags();renderEpList();
 }
 function doLogout(){cu=null;document.getElementById('login-pw').value='';show('s-login')}
+
+function setMode(mode,el){
+  currentMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mode-today-block').style.display=mode==='today'?'block':'none';
+  document.getElementById('mode-range-block').style.display=mode==='range'?'block':'none';
+}
+function getDateRange(){
+  if(currentMode==='today'){const t=today();return{s:t,e:t}}
+  return{s:document.getElementById('date-start').value,e:document.getElementById('date-end').value}
+}
 
 function staffTab(tab,el){
   document.querySelectorAll('#s-staff .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
@@ -300,10 +392,39 @@ function staffTab(tab,el){
   if(tab==='history')renderMyLogs();
 }
 
-function renderDramaTags(){
-  document.getElementById('drama-tags').innerHTML=allDramas.map(d=>
-    `<span class="tag ${selDramas.includes(d)?'selected':''}" onclick="toggleDrama(this)">${d}</span>`).join('');
+function toggleSec(sec){
+  secCollapsed[sec]=!secCollapsed[sec];
+  document.getElementById('body-'+sec).style.display=secCollapsed[sec]?'none':'block';
+  document.getElementById('caret-'+sec).style.transform=secCollapsed[sec]?'rotate(-90deg)':'';
 }
+
+function renderDramaTags(){
+  const q=(document.getElementById('drama-search').value||'').toLowerCase().trim();
+  const active=allDramas.filter(d=>(d.status||'active')==='active');
+  const finished=allDramas.filter(d=>d.status==='finished');
+  function makeTag(d){
+    const name=d.name||d;
+    const fin=d.status==='finished';
+    if(q&&!name.toLowerCase().includes(q))return'';
+    return`<span class="tag ${selDramas.includes(name)?'selected':''} ${fin?'finished-tag':''}" onclick="toggleDrama(this)">${name}</span>`;
+  }
+  const aTags=active.map(makeTag).filter(Boolean);
+  const fTags=finished.map(makeTag).filter(Boolean);
+  document.getElementById('body-active').innerHTML=aTags.join('')||'<p style="font-size:12px;color:#aaa;padding:4px 0">無進行中劇集</p>';
+  document.getElementById('body-finished').innerHTML=fTags.join('')||'<p style="font-size:12px;color:#aaa;padding:4px 0">無已完結劇集</p>';
+  document.getElementById('cnt-active').textContent=aTags.length;
+  document.getElementById('cnt-finished').textContent=fTags.length;
+  if(q){
+    document.getElementById('body-active').style.display='block';
+    document.getElementById('body-finished').style.display='block';
+    document.getElementById('caret-active').style.transform='';
+    document.getElementById('caret-finished').style.transform='';
+  }else{
+    document.getElementById('body-active').style.display=secCollapsed.active?'none':'block';
+    document.getElementById('body-finished').style.display=secCollapsed.finished?'none':'block';
+  }
+}
+
 function toggleDrama(el){
   const n=el.textContent.trim();
   if(selDramas.includes(n)){selDramas=selDramas.filter(d=>d!==n);delete epCounts[n]}
@@ -312,7 +433,7 @@ function toggleDrama(el){
 }
 async function addCustomDrama(){
   const inp=document.getElementById('custom-drama');const n=inp.value.trim();if(!n)return;
-  if(!allDramas.includes(n)){allDramas.push(n);post({action:'addDrama',name:n})}
+  if(!allDramas.find(d=>(d.name||d)===n)){allDramas.push({name:n,status:'active'});post({action:'addDrama',name:n,status:'active'})}
   if(!selDramas.includes(n)){selDramas.push(n);epCounts[n]=1}
   inp.value='';renderDramaTags();renderEpList();
 }
@@ -325,7 +446,7 @@ function renderEpList(){
       <span style="flex:1;font-size:13px">${d}</span>
       <input type="number" min="1" max="500" value="${epCounts[d]||1}" style="width:60px" onchange="epCounts[selDramas[${i}]]=(parseInt(this.value)||1);updateTotal()"/>
       <span style="font-size:12px;color:#666">集</span>
-      <button style="background:none;border:none;color:#999;cursor:pointer;font-size:15px;padding:0 2px" onclick="removeEp(${i})">✕</button>
+      <button style="background:none;border:none;color:#aaa;cursor:pointer;font-size:15px;padding:0 2px" onclick="removeEp(${i})">✕</button>
     </div>`).join('');
   updateTotal();
 }
@@ -333,8 +454,7 @@ function removeEp(i){const n=selDramas[i];selDramas.splice(i,1);delete epCounts[
 function updateTotal(){const t=selDramas.reduce((s,d)=>s+(parseInt(epCounts[d])||0),0);document.getElementById('ep-total').textContent=t+' 集'}
 
 async function submitLog(){
-  const s=document.getElementById('date-start').value;
-  const e=document.getElementById('date-end').value;
+  const{s,e}=getDateRange();
   const msg=document.getElementById('submit-msg');
   if(!s||!e){msg.className='alert alert-error';msg.textContent='請選擇日期範圍';msg.style.display='block';return}
   if(s>e){msg.className='alert alert-error';msg.textContent='結束日期不能早於開始日期';msg.style.display='block';return}
@@ -342,8 +462,7 @@ async function submitLog(){
   const u=allUsers.find(x=>x.uid===cu);
   const btn=document.getElementById('submit-btn');
   btn.disabled=true;btn.textContent='送出中...';
-  const now=new Date().toISOString();
-  let hasErr=false;
+  const now=new Date().toISOString();let hasErr=false;
   for(const d of selDramas){
     const dup=allLogs.find(l=>l.user===cu&&l.drama===d&&String(l.dateStart).slice(0,10)===s&&String(l.dateEnd).slice(0,10)===e&&l.status!=='rejected');
     if(dup)continue;
@@ -361,7 +480,7 @@ async function submitLog(){
 function renderMyLogs(){
   const logs=allLogs.filter(l=>l.user===cu).sort((a,b)=>String(b.submittedAt).localeCompare(String(a.submittedAt)));
   const el=document.getElementById('my-logs-list');
-  if(!logs.length){el.innerHTML='<p style="font-size:13px;color:#666;text-align:center;padding:2rem 0">尚無申報紀錄</p>';return}
+  if(!logs.length){el.innerHTML='<p class="empty">尚無申報紀錄</p>';return}
   const byPeriod={};
   logs.forEach(l=>{const k=String(l.dateStart).slice(0,10)+'~'+String(l.dateEnd).slice(0,10);if(!byPeriod[k])byPeriod[k]=[];byPeriod[k].push(l)});
   el.innerHTML=Object.entries(byPeriod).map(([k,items])=>`
@@ -394,8 +513,7 @@ function openEdit(id){
 }
 function cancelEdit(){show('s-staff');staffTab('history',document.querySelectorAll('#s-staff .tab')[1])}
 async function saveEdit(){
-  const s=document.getElementById('edit-start').value;
-  const e=document.getElementById('edit-end').value;
+  const s=document.getElementById('edit-start').value,e=document.getElementById('edit-end').value;
   const eps=parseInt(document.getElementById('edit-eps').value)||0;
   const msg=document.getElementById('edit-msg');
   if(!s||!e||s>e){msg.className='alert alert-error';msg.textContent='日期範圍不正確';msg.style.display='block';return}
@@ -410,16 +528,10 @@ async function saveEdit(){
 }
 
 async function refreshAdmin(){
-  document.getElementById('stat-pending').textContent='...';
-  document.getElementById('stat-approved').textContent='...';
-  document.getElementById('stat-amount').textContent='...';
-  try{
-    const data=await post({action:'init'});
-    allUsers=data.users||[];allLogs=data.logs||[];allDramas=data.dramas?data.dramas.map(d=>d.name||d):[];
-  }catch(e){}
+  ['stat-pending','stat-approved','stat-amount'].forEach(id=>document.getElementById(id).textContent='...');
+  try{const data=await post({action:'init'});allUsers=data.users||[];allLogs=data.logs||[];allDramas=data.dramas||[]}catch(e){}
   renderAdminStats();
 }
-
 function renderAdminStats(){
   const pending=allLogs.filter(l=>l.status==='pending');
   const approved=allLogs.filter(l=>l.status==='approved');
@@ -431,16 +543,15 @@ function renderAdminStats(){
   renderLogList('approved-list',approved,true);
   renderSettledList(allLogs.filter(l=>l.status==='settled').sort((a,b)=>String(b.settledAt).localeCompare(String(a.settledAt))));
 }
-
 function adminTab(tab,el){
   document.querySelectorAll('#s-admin .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
-  ['pending','approved','settled','staff'].forEach(t=>document.getElementById('at-'+t).style.display=t===tab?'block':'none');
+  ['pending','approved','settled','dramas','staff'].forEach(t=>document.getElementById('at-'+t).style.display=t===tab?'block':'none');
   if(tab==='staff')renderStaffList();
+  if(tab==='dramas')renderDramaMgmt();
 }
-
 function renderLogList(elId,logs,showSettle){
   const el=document.getElementById(elId);
-  if(!logs.length){el.innerHTML='<p style="font-size:13px;color:#666;padding:1rem 0">無資料</p>';return}
+  if(!logs.length){el.innerHTML='<p class="empty">無資料</p>';return}
   const byUser={};
   logs.forEach(l=>{if(!byUser[l.user])byUser[l.user]={name:l.name,items:[]};byUser[l.user].items.push(l)});
   el.innerHTML=Object.entries(byUser).map(([uid,u])=>`
@@ -465,10 +576,9 @@ function renderLogList(elId,logs,showSettle){
       ${showSettle?`<div style="text-align:right;padding-top:8px;border-top:0.5px solid rgba(0,0,0,0.08);margin-top:4px"><span style="font-size:12px;color:#666">小計 CAD $${u.items.reduce((s,i)=>s+(Number(i.episodes)*Number(i.rate)),0).toLocaleString()}</span></div>`:''}
     </div>`).join('');
 }
-
 function renderSettledList(logs){
   const el=document.getElementById('settled-list');
-  if(!logs.length){el.innerHTML='<p style="font-size:13px;color:#666;padding:1rem 0">尚無結算紀錄</p>';return}
+  if(!logs.length){el.innerHTML='<p class="empty">尚無結算紀錄</p>';return}
   const byUser={};
   logs.forEach(l=>{if(!byUser[l.user])byUser[l.user]={name:l.name,items:[]};byUser[l.user].items.push(l)});
   el.innerHTML=Object.entries(byUser).map(([uid,u])=>`
@@ -482,15 +592,64 @@ function renderSettledList(logs){
       </div>
       ${u.items.map(l=>`
         <div class="row">
-          <div style="flex:1">
-            <p style="font-size:13px">${l.drama}</p>
-            <p style="font-size:12px;color:#666">${fmtRange(l.dateStart,l.dateEnd)} · ${l.episodes} 集</p>
-          </div>
+          <div style="flex:1"><p style="font-size:13px">${l.drama}</p><p style="font-size:12px;color:#666">${fmtRange(l.dateStart,l.dateEnd)} · ${l.episodes} 集</p></div>
           <span class="badge badge-settled">已結算</span>
         </div>`).join('')}
     </div>`).join('');
 }
-
+function renderDramaMgmt(){
+  const el=document.getElementById('drama-mgmt-list');
+  if(!allDramas.length){el.innerHTML='<p class="empty">尚無劇集</p>';return}
+  const active=allDramas.filter(d=>(d.status||'active')==='active');
+  const finished=allDramas.filter(d=>d.status==='finished');
+  function row(d){
+    const name=d.name||d,status=d.status||'active';
+    return`<div class="row">
+      <span style="flex:1;font-size:13px;font-weight:500">${name}</span>
+      <span class="badge ${status==='active'?'badge-active':'badge-finished'}">${status==='active'?'進行中':'已完結'}</span>
+      <button class="icon-btn" onclick="openEditDrama('${name.replace(/'/g,"\\'")}')">編輯</button>
+    </div>`;
+  }
+  el.innerHTML=`
+    <div class="card">
+      <p class="sec-title" style="color:#27500A">進行中（${active.length} 部）</p>
+      ${active.map(row).join('')||'<p style="font-size:12px;color:#aaa">無</p>'}
+    </div>
+    ${finished.length?`<div class="card">
+      <p class="sec-title" style="color:#888">已完結（${finished.length} 部）</p>
+      ${finished.map(row).join('')}
+    </div>`:''}`;
+}
+function openAddDrama(){
+  document.getElementById('modal-drama-title').textContent='新增劇集';
+  document.getElementById('edit-drama-orig').value='';
+  document.getElementById('d-name').value='';
+  document.getElementById('d-status').value='active';
+  document.getElementById('modal-drama-err').style.display='none';
+  document.getElementById('modal-drama').classList.add('open');
+}
+function openEditDrama(name){
+  const d=allDramas.find(x=>(x.name||x)===name);if(!d)return;
+  document.getElementById('modal-drama-title').textContent='編輯劇集';
+  document.getElementById('edit-drama-orig').value=name;
+  document.getElementById('d-name').value=d.name||d;
+  document.getElementById('d-status').value=d.status||'active';
+  document.getElementById('modal-drama-err').style.display='none';
+  document.getElementById('modal-drama').classList.add('open');
+}
+async function saveDrama(){
+  const name=document.getElementById('d-name').value.trim();
+  const status=document.getElementById('d-status').value;
+  const orig=document.getElementById('edit-drama-orig').value;
+  const err=document.getElementById('modal-drama-err');
+  if(!name){err.textContent='請填入劇集名稱';err.style.display='block';return}
+  err.style.display='none';
+  const res=await post({action:'addDrama',name,status,oldName:orig||null});
+  if(res&&res.error){err.textContent='儲存失敗：'+res.error;err.style.display='block';return}
+  if(orig){const idx=allDramas.findIndex(d=>(d.name||d)===orig);if(idx>-1)allDramas[idx]={name,status}}
+  else if(!allDramas.find(d=>(d.name||d)===name))allDramas.push({name,status});
+  closeModal('modal-drama');renderDramaMgmt();
+}
 async function approveLog(id){
   const now=new Date().toISOString();
   await post({action:'updateLog',id,field:'status',value:'approved',reviewedAt:now});
@@ -504,8 +663,7 @@ function openReject(id){
   document.getElementById('reject-preview').innerHTML=`
     <p style="font-size:13px;font-weight:500;margin-bottom:6px">${log.name} — ${log.drama}</p>
     <p style="font-size:12px;color:#666">${fmtRange(log.dateStart,log.dateEnd)} · ${log.episodes} 集</p>`;
-  document.getElementById('reject-reason').value='';
-  show('s-reject');
+  document.getElementById('reject-reason').value='';show('s-reject');
 }
 function cancelReject(){show('s-admin')}
 async function confirmReject(){
@@ -534,7 +692,6 @@ async function settleAll(){
   }
   renderAdminStats();
 }
-
 function renderStaffList(){
   document.getElementById('staff-list').innerHTML=allUsers.map(u=>{
     const totalEps=allLogs.filter(l=>l.user===u.uid).reduce((s,l)=>s+Number(l.episodes),0);
@@ -551,12 +708,12 @@ function renderStaffList(){
         </div>
       </div>
     </div>`;
-  }).join('')||'<p style="font-size:13px;color:#666">尚無員工</p>';
+  }).join('')||'<p class="empty">尚無員工</p>';
 }
 function openAddStaff(){
   document.getElementById('modal-title').textContent='新增員工';
   document.getElementById('edit-uid').value='';
-  ['s-name','s-nick','s-rate','s-pass'].forEach(id=>document.getElementById(id).value='');
+  ['s-name','s-nick','s-rate'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('modal-err').style.display='none';
   document.getElementById('modal-staff').classList.add('open');
 }
@@ -567,27 +724,24 @@ function openEditStaff(uid){
   document.getElementById('s-name').value=u.name;
   document.getElementById('s-nick').value=u.nick||'';
   document.getElementById('s-rate').value=u.rate;
-  document.getElementById('s-pass').value=u.pass;
   document.getElementById('modal-err').style.display='none';
   document.getElementById('modal-staff').classList.add('open');
 }
-function closeModal(){document.getElementById('modal-staff').classList.remove('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
 async function saveStaff(){
   const name=document.getElementById('s-name').value.trim();
   const nick=document.getElementById('s-nick').value.trim();
   const rate=parseInt(document.getElementById('s-rate').value);
-  const pass=document.getElementById('s-pass').value.trim();
   const err=document.getElementById('modal-err');
   if(!name){err.textContent='姓名不能為空';err.style.display='block';return}
   if(!rate||rate<1){err.textContent='請填入正確的稿費單價';err.style.display='block';return}
-  if(!pass){err.textContent='請設定密碼';err.style.display='block';return}
   err.style.display='none';
   const euid=document.getElementById('edit-uid').value;
-  const res=await post({action:'saveUser',uid:euid||null,name,nick,rate,pass});
+  const res=await post({action:'saveUser',uid:euid||null,name,nick,rate,pass:''});
   if(res&&res.error){err.textContent='儲存失敗：'+res.error;err.style.display='block';return}
-  if(euid){const idx=allUsers.findIndex(x=>x.uid===euid);if(idx>-1)allUsers[idx]={...allUsers[idx],name,nick,rate,pass}}
-  else allUsers.push({uid:res.uid,name,nick,rate,pass});
-  closeModal();buildLoginSelect();renderStaffList();
+  if(euid){const idx=allUsers.findIndex(x=>x.uid===euid);if(idx>-1)allUsers[idx]={...allUsers[idx],name,nick,rate}}
+  else allUsers.push({uid:res.uid,name,nick,rate});
+  closeModal('modal-staff');buildLoginSelect();renderStaffList();
 }
 async function askDeleteStaff(uid,name){
   if(!confirm(`確定刪除「${name}」？申報紀錄不會一併刪除。`))return;
